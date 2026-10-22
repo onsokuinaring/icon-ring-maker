@@ -2,7 +2,7 @@
 {
   "id": "./",
   "name": "音速リングメーカー",
-  "short_name": "音速リングメーカー",
+  "short_name": "音速リング",
   "description": "アイコン画像と透過リングを合成してPNG保存するアプリ",
   "lang": "ja",
   "start_url": "./",
