@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>アイコンリングメーカー</title>
+<style>
+:root{color-scheme:light;--ink:#25213d;--muted:#716d86;--accent:#7967ee;--line:#e6e2f3;--soft:#f6f4ff}
+*{box-sizing:border-box}body{margin:0;background:#f8f7fc;color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+main{max-width:960px;margin:auto;padding:22px 14px 40px}header{text-align:center;padding:12px 0 22px}h1{font-size:clamp(24px,5vw,36px);margin:0 0 8px}header p{color:var(--muted);margin:0}
+.layout{display:grid;grid-template-columns: minmax(0,1fr) minmax(0,1fr);gap:16px}.panel{background:white;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 5px 18px #29205b0a}.wide{grid-column:1/-1}.title{font-size:17px;font-weight:750;margin:0 0 12px}.upload{display:block;border:1.5px dashed #c9c1f2;background:var(--soft);border-radius:12px;padding:15px;text-align:center;cursor:pointer;font-weight:650}.upload small{display:block;color:var(--muted);font-weight:400;margin-top:4px}.upload input{display:none}.checker{background-color:#fff;background-image:linear-gradient(45deg,#ddd 25%,transparent 25%),linear-gradient(-45deg,#ddd 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd 75%),linear-gradient(-45deg,transparent 75%,#ddd 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;border-radius:12px;overflow:hidden;margin-top:12px}canvas{display:block;width:100%;height:auto;aspect-ratio:1}.controls{display:grid;grid-template-columns:1fr auto;gap:5px 10px;margin-top:12px;align-items:center}.controls label{font-size:14px}.controls output{font-size:12px;color:var(--muted)}.controls input{grid-column:1/-1;width:100%;accent-color:var(--accent);margin:0 0 8px;min-height:28px;touch-action:pan-y}.btn{border:1px solid var(--line);border-radius:12px;background:white;color:var(--ink);font:inherit;font-weight:700;padding:12px 15px;cursor:pointer}.primary{background:var(--accent);color:white;border-color:var(--accent)}.btn:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.actions .primary{flex:1}.settings{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.settings select{font:inherit;border:1px solid var(--line);border-radius:10px;padding:9px;background:white}.status{color:var(--muted);font-size:13px;min-height:20px;margin-top:10px}.note{color:var(--muted);font-size:13px;line-height:1.65;margin-bottom:0}
+@media(max-width:620px){.layout{grid-template-columns:1fr}.wide{grid-column:auto}main{padding:12px}.panel{padding:13px}}
+</style>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#7967ee">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="アイコンリングメーカー">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+</head>
+<body>
+<main>
+<header><h1>✦ アイコンリングメーカー</h1><p>アイコンと透過リングを重ねて、正方形PNGで保存</p></header>
+<div class="layout">
+<section class="panel">
+<h2 class="title">① アイコン画像</h2>
+<label class="upload">画像を選択<small>写真・イラストを読み込み</small><input id="baseFile" type="file" accept="image/*"></label>
+<div class="checker"><canvas id="basePreview" width="512" height="512"></canvas></div>
+<div class="controls">
+<label for="baseZoom">拡大・縮小</label><output id="baseZoomOut">100%</output><input id="baseZoom" type="range" min="50" max="250" value="100">
+<label for="baseX">左右位置</label><output id="baseXOut">中央</output><input id="baseX" type="range" min="-200" max="200" value="0">
+<label for="baseY">上下位置</label><output id="baseYOut">中央</output><input id="baseY" type="range" min="-200" max="200" value="0">
+</div><button class="btn" id="resetBase">位置をリセット</button>
+</section>
+<section class="panel">
+<h2 class="title">② アイコンリング画像</h2>
+<label class="upload">リング画像を選択<small>背景透過PNGがおすすめ</small><input id="ringFile" type="file" accept="image/*"></label>
+<div class="checker"><canvas id="ringPreview" width="512" height="512"></canvas></div>
+<div class="controls">
+<label for="ringZoom">リングの大きさ</label><output id="ringZoomOut">100%</output><input id="ringZoom" type="range" min="30" max="200" value="100">
+<label for="ringX">左右位置</label><output id="ringXOut">中央</output><input id="ringX" type="range" min="-200" max="200" value="0">
+<label for="ringY">上下位置</label><output id="ringYOut">中央</output><input id="ringY" type="range" min="-200" max="200" value="0">
+</div><button class="btn" id="resetRing">位置をリセット</button>
+</section>
+<section class="panel wide">
+<h2 class="title">③ 完成プレビュー</h2>
+<div class="checker" style="max-width:520px;margin:0 auto"><canvas id="result" width="1024" height="1024"></canvas></div>
+<div class="actions">
+<button class="btn" id="clear">画像をクリア</button>
+<button class="btn primary" id="save" disabled>↓ PNGで保存</button>
+</div>
+<div class="settings" style="margin-top:14px"><label for="size">保存サイズ</label><select id="size"><option value="1024">1024 × 1024 px</option><option value="800">800 × 800 px</option><option value="512">512 × 512 px</option><option value="400">400 × 400 px</option></select></div>
+<p class="status" id="status" role="status">2枚の画像を選択してください。</p>
+<p class="note">画像はこのブラウザ内で処理され、サーバーには送信されません。背景透過を保つには、リング画像に透過PNGを使用してください。元のアイコンの背景を自動で消す機能はありません。</p>
+</section>
+</div>
+</main>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const state={base:null,ring:null};
+const cfg={
+ base:{file:$('baseFile'),canvas:$('basePreview'),zoom:$('baseZoom'),x:$('baseX'),y:$('baseY'),reset:$('resetBase')},
+ ring:{file:$('ringFile'),canvas:$('ringPreview'),zoom:$('ringZoom'),x:$('ringX'),y:$('ringY'),reset:$('resetRing')}
+};
+function draw(canvas,img,c,clear=true){
+ const ctx=canvas.getContext('2d');
+ if(clear)ctx.clearRect(0,0,canvas.width,canvas.height);
+ if(!img)return;
+ const w=canvas.width,h=canvas.height,scale=Math.max(w/img.width,h/img.height)*Number(c.zoom.value)/100;
+ const dw=img.width*scale,dh=img.height*scale;
+ ctx.drawImage(img,(w-dw)/2+Number(c.x.value)*w/200,(h-dh)/2+Number(c.y.value)*h/200,dw,dh);
+}
+function update(){
+ for(const [key,c] of Object.entries(cfg)){
+  draw(c.canvas,state[key],c);
+  $(key+'ZoomOut').textContent=c.zoom.value+'%';
+  $(key+'XOut').textContent=Number(c.x.value)===0?'中央':(Number(c.x.value)>0?'+':'')+c.x.value;
+  $(key+'YOut').textContent=Number(c.y.value)===0?'中央':(Number(c.y.value)>0?'+':'')+c.y.value;
+ }
+ const canvas=$('result'),ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+ draw(canvas,state.base,cfg.base,false);draw(canvas,state.ring,cfg.ring,false);
+ $('save').disabled=!(state.base&&state.ring);
+ $('status').textContent=state.base&&state.ring?'合成完了。位置や大きさを調整して保存できます。':state.base?'アイコンを読み込みました。リング画像を選んでください。':state.ring?'リングを読み込みました。アイコン画像を選んでください。':'2枚の画像を選択してください。';
+}
+for(const [key,c] of Object.entries(cfg)){
+ c.file.addEventListener('change',()=>{
+  const f=c.file.files&&c.file.files[0];if(!f)return;
+  if(!f.type.startsWith('image/')){ $('status').textContent='画像ファイルを選んでください。';return; }
+  const url=URL.createObjectURL(f),img=new Image();
+  img.onload=()=>{state[key]=img;URL.revokeObjectURL(url);update();};
+  img.onerror=()=>{URL.revokeObjectURL(url);$('status').textContent='画像を読み込めませんでした。別の画像をお試しください。';};
+  img.src=url;
+ });
+ [c.zoom,c.x,c.y].forEach(el=>el.addEventListener('input',update));
+ c.reset.addEventListener('click',()=>{c.zoom.value=100;c.x.value=0;c.y.value=0;update();});
+}
+$('save').addEventListener('click',()=>{
+ if(!state.base||!state.ring)return;
+ const n=Number($('size').value),canvas=document.createElement('canvas');canvas.width=n;canvas.height=n;
+ const ctx=canvas.getContext('2d');ctx.clearRect(0,0,n,n);
+ draw(canvas,state.base,cfg.base,false);draw(canvas,state.ring,cfg.ring,false);
+ canvas.toBlob(blob=>{
+  if(!blob){$('status').textContent='PNGの作成に失敗しました。';return;}
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='icon-ring.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+  $('status').textContent='PNGを保存しました。端末のダウンロード先を確認してください。';
+ },'image/png');
+});
+$('clear').addEventListener('click',()=>{
+ state.base=null;state.ring=null;
+ for(const c of Object.values(cfg)){c.file.value='';c.zoom.value=100;c.x.value=0;c.y.value=0;}
+ update();
+});
+update();
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
